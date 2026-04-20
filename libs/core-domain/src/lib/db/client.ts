@@ -1,28 +1,27 @@
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
+import postgres, { type Sql } from 'postgres';
 import * as schema from './schema.js';
 
-let _sql: ReturnType<typeof postgres> | null = null;
-let _db: PostgresJsDatabase<typeof schema> | null = null;
+type Db = PostgresJsDatabase<typeof schema>;
 
-/**
- * Lazily-initialized Drizzle client. Consumers should ensure DATABASE_URL is set
- * before calling. In NestJS code, prefer injecting a provider that wraps this.
- */
-export function getDb(url = process.env.DATABASE_URL): PostgresJsDatabase<typeof schema> {
-  if (_db) return _db;
-  if (!url) {
-    throw new Error('DATABASE_URL is not set');
-  }
-  _sql = postgres(url, { max: 10, prepare: false });
-  _db = drizzle(_sql, { schema, casing: 'snake_case' });
-  return _db;
+// Cache per URL so the admin role (migrations/auth/seed) and the app role
+// (runtime API, subject to RLS) keep separate connection pools. A single
+// singleton would silently return the first-used role for every subsequent
+// getDb() call — which defeats the tenant-scoping contract entirely.
+const pools = new Map<string, { sql: Sql; db: Db }>();
+
+export function getDb(url = process.env.DATABASE_URL): Db {
+  if (!url) throw new Error('DATABASE_URL is not set');
+  const cached = pools.get(url);
+  if (cached) return cached.db;
+  const sql = postgres(url, { max: 10, prepare: false });
+  const db = drizzle(sql, { schema, casing: 'snake_case' });
+  pools.set(url, { sql, db });
+  return db;
 }
 
 export async function closeDb(): Promise<void> {
-  if (_sql) {
-    await _sql.end({ timeout: 5 });
-    _sql = null;
-    _db = null;
-  }
+  const entries = Array.from(pools.values());
+  pools.clear();
+  await Promise.all(entries.map(({ sql }) => sql.end({ timeout: 5 })));
 }

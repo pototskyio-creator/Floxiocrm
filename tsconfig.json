@@ -26,6 +26,9 @@
     },
     {
       "path": "./libs/core-crm"
+    },
+    {
+      "path": "./libs/core-auth"
     }
   ]
 }
