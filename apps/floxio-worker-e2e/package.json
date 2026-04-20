@@ -1,0 +1,26 @@
+{
+  "name": "@org/floxio-worker-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@org/floxio-worker"
+    ],
+    "targets": {
+      "e2e": {
+        "executor": "@nx/jest:jest",
+        "outputs": [
+          "{projectRoot}/test-output/jest/coverage"
+        ],
+        "options": {
+          "jestConfig": "apps/floxio-worker-e2e/jest.config.cts",
+          "passWithNoTests": true
+        },
+        "dependsOn": [
+          "@org/floxio-worker:build",
+          "@org/floxio-worker:serve"
+        ]
+      }
+    }
+  }
+}

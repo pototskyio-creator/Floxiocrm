@@ -2,5 +2,27 @@
   "extends": "./tsconfig.base.json",
   "compileOnSave": false,
   "files": [],
-  "references": []
+  "references": [
+    {
+      "path": "./apps/floxio-api-e2e"
+    },
+    {
+      "path": "./apps/floxio-api"
+    },
+    {
+      "path": "./apps/floxio-web"
+    },
+    {
+      "path": "./apps/floxio-worker-e2e"
+    },
+    {
+      "path": "./apps/floxio-worker"
+    },
+    {
+      "path": "./libs/core-domain"
+    },
+    {
+      "path": "./libs/shared-types"
+    }
+  ]
 }

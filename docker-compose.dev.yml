@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: floxio-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: floxio
+      POSTGRES_PASSWORD: floxio_dev_password
+      POSTGRES_DB: floxio
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - floxio_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U floxio -d floxio"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: floxio-redis-dev
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - floxio_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  floxio_db_data:
+  floxio_redis_data:

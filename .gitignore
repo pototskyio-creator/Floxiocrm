@@ -46,3 +46,15 @@ Thumbs.db
 .claude/worktrees
 .claude/settings.local.json
 .nx/polygraph
+test-output
+
+# Next.js
+.next
+out
+
+# env & secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
