@@ -8,6 +8,20 @@
       "when": 1776720627939,
       "tag": "0000_violet_jack_murdock",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1776721663060,
+      "tag": "0001_lowly_mad_thinker",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776721681514,
+      "tag": "0002_rls_policies",
+      "breakpoints": true
     }
   ]
 }

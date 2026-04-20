@@ -9,6 +9,11 @@ module.exports = {
       devtoolModuleFilenameTemplate: '[absolute-resource-path]',
     }),
   },
+  resolve: {
+    // Resolve workspace libs to their TS sources via the `@org/source` exports condition
+    // (mirrors TypeScript's customConditions in tsconfig.base.json).
+    conditionNames: ['@org/source', 'import', 'require', 'default'],
+  },
   plugins: [
     new NxAppWebpackPlugin({
       target: 'node',

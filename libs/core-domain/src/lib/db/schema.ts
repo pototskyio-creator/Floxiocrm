@@ -23,7 +23,7 @@ export const tenants = pgTable('tenants', {
   slug: text('slug').notNull().unique(),
   settings: jsonb('settings').notNull().default(sql`'{}'::jsonb`),
   ...auditColumns,
-});
+}).enableRLS();
 
 // users: authenticated operators within a tenant.
 export const users = pgTable(
@@ -48,8 +48,29 @@ export const users = pgTable(
     index('users_tenant_idx').on(t.tenantId),
     index('users_email_idx').on(t.email),
   ]
-);
+).enableRLS();
 
-// NOTE: further entities (clients, projects, stages, reminders, messages, ...)
-// будут добавлены в Д1-Д9 по мере прохождения соответствующих этапов плана.
-// Это даёт чистую миграционную историю и не тащит мёртвые колонки.
+// clients: counterparty/contact entities within a tenant.
+export const clients = pgTable(
+  'clients',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => tenants.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    status: text('status', { enum: ['active', 'archived'] })
+      .notNull()
+      .default('active'),
+    notes: text('notes'),
+    tags: jsonb('tags').notNull().default(sql`'[]'::jsonb`),
+    ...auditColumns,
+  },
+  (t) => [
+    index('clients_tenant_idx').on(t.tenantId),
+    index('clients_tenant_status_idx').on(t.tenantId, t.status),
+  ]
+).enableRLS();
+
+// NOTE: further entities (projects, stages, reminders, messages, ...)
+// будут добавлены в Д2+ по мере прохождения соответствующих этапов плана.

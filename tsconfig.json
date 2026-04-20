@@ -23,6 +23,9 @@
     },
     {
       "path": "./libs/shared-types"
+    },
+    {
+      "path": "./libs/core-crm"
     }
   ]
 }
