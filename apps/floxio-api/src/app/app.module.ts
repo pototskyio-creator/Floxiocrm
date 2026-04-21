@@ -6,11 +6,12 @@ import {
 } from '@nestjs/common';
 import { CoreCrmModule } from '@org/core-crm';
 import { CoreAuthModule, SessionMiddleware } from '@org/core-auth';
+import { CoreIntegrationsModule } from '@org/core-integrations';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
 @Module({
-  imports: [CoreCrmModule, CoreAuthModule],
+  imports: [CoreCrmModule, CoreAuthModule, CoreIntegrationsModule],
   controllers: [AppController],
   providers: [AppService],
 })

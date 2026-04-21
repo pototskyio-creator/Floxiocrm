@@ -43,6 +43,20 @@
       "when": 1776753733753,
       "tag": "0005_rls_tasks_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776763565192,
+      "tag": "0006_old_franklin_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776763570346,
+      "tag": "0007_rls_integrations",
+      "breakpoints": true
     }
   ]
 }

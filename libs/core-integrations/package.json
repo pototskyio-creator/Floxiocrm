@@ -1,0 +1,29 @@
+{
+  "name": "@org/core-integrations",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "@org/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "nx": {
+    "tags": ["scope:shared", "type:integrations"]
+  },
+  "dependencies": {
+    "tslib": "^2.3.0",
+    "@org/core-domain": "workspace:*",
+    "@org/core-crm": "workspace:*",
+    "@nestjs/common": "^11.0.0",
+    "drizzle-orm": "^0.45.2",
+    "zod": "^4.3.6"
+  }
+}

@@ -11,10 +11,11 @@ import {
   type ReminderJob,
 } from '@org/core-jobs';
 import { RemindersAdminRepository } from '@org/core-crm';
+import { DeliveryService } from '@org/core-integrations';
 
-// Subscribes to the reminders queue and fires each due reminder.
-// Delivery channels (Telegram/email) are wired in Д7+ — for now we mark the
-// reminder as `fired` and log the payload.
+// Picks up each due reminder, dispatches the delivery through the integration
+// registry by channel, and stamps fired/failed on the row. Actual delivery
+// semantics live in the adapter — worker only orchestrates.
 @Injectable()
 export class RemindersProcessor implements OnApplicationBootstrap, OnModuleDestroy {
   private readonly logger = new Logger(RemindersProcessor.name);
@@ -22,7 +23,8 @@ export class RemindersProcessor implements OnApplicationBootstrap, OnModuleDestr
 
   constructor(
     private readonly redis: RedisService,
-    private readonly remindersAdmin: RemindersAdminRepository
+    private readonly remindersAdmin: RemindersAdminRepository,
+    private readonly delivery: DeliveryService
   ) {}
 
   onApplicationBootstrap(): void {
@@ -33,35 +35,41 @@ export class RemindersProcessor implements OnApplicationBootstrap, OnModuleDestr
     );
 
     this.worker.on('ready', () => this.logger.log('Reminders worker ready'));
-    this.worker.on('completed', (job) =>
-      this.logger.debug(`Job ${job.id} completed`)
-    );
+    this.worker.on('completed', (job) => this.logger.debug(`Job ${job.id} completed`));
     this.worker.on('failed', (job, err) =>
       this.logger.error(`Job ${job?.id} failed: ${err?.message}`, err?.stack)
     );
   }
 
   private async handle(job: Job<ReminderJob>): Promise<void> {
-    const { reminderId, tenantId } = job.data;
-    const reminder = await this.remindersAdmin.findByIdAdmin(reminderId);
-
-    if (!reminder) {
-      this.logger.warn(`Reminder ${reminderId} not found — skipping`);
+    const { reminderId } = job.data;
+    const row = await this.remindersAdmin.findWithTaskAdmin(reminderId);
+    if (!row) {
+      this.logger.warn(`Reminder ${reminderId} or its task not found — skipping`);
       return;
     }
+    const { reminder, task } = row;
     if (reminder.status !== 'pending') {
-      this.logger.debug(
-        `Reminder ${reminderId} already ${reminder.status} — skipping`
-      );
+      this.logger.debug(`Reminder ${reminderId} already ${reminder.status} — skipping`);
       return;
     }
 
-    // Д7 will dispatch via the matching IntegrationAdapter. For now, log.
-    this.logger.log(
-      `FIRING reminder ${reminderId} (tenant=${tenantId}, channel=${reminder.channel}, task=${reminder.taskId})`
-    );
-
-    await this.remindersAdmin.markFired(reminderId);
+    try {
+      await this.delivery.deliver(reminder.channel, {
+        tenantId: reminder.tenantId,
+        title: task.title,
+        body: task.description,
+        recipientUserId: task.assigneeUserId,
+        sourceKind: 'task',
+        sourceId: task.id,
+      });
+      await this.remindersAdmin.markFired(reminderId);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      await this.remindersAdmin.markFailed(reminderId, msg);
+      // Re-throw so BullMQ's retry/backoff kicks in for transient errors.
+      throw err;
+    }
   }
 
   async onModuleDestroy(): Promise<void> {

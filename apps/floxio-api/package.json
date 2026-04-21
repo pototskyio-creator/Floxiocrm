@@ -93,6 +93,7 @@
     "@org/core-auth": "workspace:*",
     "@org/core-crm": "workspace:*",
     "@org/core-domain": "workspace:*",
+    "@org/core-integrations": "workspace:*",
     "@org/shared-types": "workspace:*",
     "better-auth": "^1.6.5",
     "dotenv": "^17.4.2",

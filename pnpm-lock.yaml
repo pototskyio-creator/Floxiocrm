@@ -267,6 +267,9 @@ importers:
       '@org/core-domain':
         specifier: workspace:*
         version: link:../../libs/core-domain
+      '@org/core-integrations':
+        specifier: workspace:*
+        version: link:../../libs/core-integrations
       '@org/shared-types':
         specifier: workspace:*
         version: link:../../libs/shared-types
@@ -343,6 +346,9 @@ importers:
       '@org/core-domain':
         specifier: workspace:*
         version: link:../../libs/core-domain
+      '@org/core-integrations':
+        specifier: workspace:*
+        version: link:../../libs/core-integrations
       '@org/core-jobs':
         specifier: workspace:*
         version: link:../../libs/core-jobs
@@ -430,6 +436,27 @@ importers:
       tslib:
         specifier: ^2.3.0
         version: 2.8.1
+
+  libs/core-integrations:
+    dependencies:
+      '@nestjs/common':
+        specifier: ^11.0.0
+        version: 11.1.19(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@org/core-crm':
+        specifier: workspace:*
+        version: link:../core-crm
+      '@org/core-domain':
+        specifier: workspace:*
+        version: link:../core-domain
+      drizzle-orm:
+        specifier: ^0.45.2
+        version: 0.45.2(@opentelemetry/api@1.9.1)(kysely@0.28.16)(postgres@3.4.9)
+      tslib:
+        specifier: ^2.3.0
+        version: 2.8.1
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
 
   libs/core-jobs:
     dependencies:

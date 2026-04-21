@@ -78,7 +78,7 @@ async function main() {
   await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT set_config('app.admin', 'on', true)`);
     await tx.execute(
-      sql`TRUNCATE TABLE reminders, tasks, projects, stages, pipelines, clients, invitation, member, organization, session, account, "user", verification RESTART IDENTITY CASCADE`
+      sql`TRUNCATE TABLE notifications, integration_instances, reminders, tasks, projects, stages, pipelines, clients, invitation, member, organization, session, account, "user", verification RESTART IDENTITY CASCADE`
     );
   });
 
@@ -110,6 +110,13 @@ async function main() {
 
     const result = await db.transaction(async (tx) => {
       await tx.execute(sql`SELECT set_config('app.admin', 'on', true)`);
+
+      // Default in_app integration so reminders have a channel out of the box.
+      await tx.insert(schema.integrationInstances).values({
+        tenantId: org.id,
+        kind: 'in_app',
+        name: 'In-app notifications',
+      });
 
       const [pipeline] = await tx
         .insert(schema.pipelines)

@@ -35,6 +35,9 @@
     },
     {
       "path": "./libs/ui-kit"
+    },
+    {
+      "path": "./libs/core-integrations"
     }
   ]
 }

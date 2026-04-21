@@ -28,6 +28,9 @@
       "path": "../../libs/core-jobs/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/core-integrations/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/core-domain/tsconfig.lib.json"
     },
     {

@@ -281,3 +281,33 @@ describe('/api/tasks — CRUD + auto-reminder → worker fires it', () => {
     expect(done.data.completedAt).toBeTruthy();
   });
 });
+
+describe('/api/integrations — registry + install', () => {
+  it('returns the seeded in_app instance per tenant', async () => {
+    const cookie = await signIn(USER_A);
+    const res = await axios.get('/api/integrations', { headers: { cookie } });
+    expect(res.status).toBe(200);
+    const rows = res.data as Array<{ kind: string; status: string }>;
+    const inApp = rows.find((r) => r.kind === 'in_app');
+    expect(inApp).toBeDefined();
+    expect(inApp!.status).toBe('active');
+  });
+
+  it('exposes the registered kinds via /kinds', async () => {
+    const cookie = await signIn(USER_A);
+    const res = await axios.get('/api/integrations/kinds', { headers: { cookie } });
+    expect(res.status).toBe(200);
+    const kinds = (res.data as Array<{ kind: string }>).map((k) => k.kind);
+    expect(kinds).toContain('in_app');
+  });
+
+  it('rejects an unknown adapter kind with 404', async () => {
+    const cookie = await signIn(USER_A);
+    const res = await axios.post(
+      '/api/integrations',
+      { kind: 'does-not-exist', name: 'nope' },
+      { headers: { cookie } }
+    );
+    expect(res.status).toBe(404);
+  });
+});

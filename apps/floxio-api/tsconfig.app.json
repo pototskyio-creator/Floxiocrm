@@ -25,6 +25,9 @@
       "path": "../../libs/shared-types/tsconfig.lib.json"
     },
     {
+      "path": "../../libs/core-integrations/tsconfig.lib.json"
+    },
+    {
       "path": "../../libs/core-domain/tsconfig.lib.json"
     },
     {

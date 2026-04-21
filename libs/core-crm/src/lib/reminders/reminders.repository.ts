@@ -73,6 +73,23 @@ export class RemindersAdminRepository {
     });
   }
 
+  // Joined read used by the worker when building the delivery payload.
+  // Returns null if either the reminder or its task has been removed.
+  async findWithTaskAdmin(id: string) {
+    return this.dbService.withAdminTx(async (tx) => {
+      const rows = await tx
+        .select({
+          reminder: reminders,
+          task: schema.tasks,
+        })
+        .from(reminders)
+        .innerJoin(schema.tasks, eq(reminders.taskId, schema.tasks.id))
+        .where(eq(reminders.id, id))
+        .limit(1);
+      return rows[0] ?? null;
+    });
+  }
+
   async markFired(id: string) {
     return this.dbService.withAdminTx(async (tx) => {
       await tx

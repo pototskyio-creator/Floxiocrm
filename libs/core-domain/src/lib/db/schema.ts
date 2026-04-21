@@ -270,6 +270,64 @@ export const tasks = pgTable(
   ]
 ).enableRLS();
 
+// integration_instances: per-tenant configuration of an external channel
+// (telegram bot, imap mailbox, generic webhook, ...). `config` is AES-GCM
+// encrypted at rest so raw API tokens never sit in the clear in the DB.
+// `kind` is the adapter's static identifier; adapters register themselves
+// with the IntegrationRegistry on module init.
+export const integrationInstances = pgTable(
+  'integration_instances',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    name: text('name').notNull(),
+    // Ciphertext of the JSON config. Format: base64(iv):base64(authTag):base64(ciphertext).
+    config: text('config'),
+    status: text('status', { enum: ['active', 'disabled', 'error'] })
+      .notNull()
+      .default('active'),
+    lastError: text('last_error'),
+    lastCheckedAt: timestamp('last_checked_at', { withTimezone: true }),
+    ...auditColumns,
+  },
+  (t) => [
+    index('integration_instances_tenant_idx').on(t.tenantId),
+    index('integration_instances_tenant_kind_idx').on(t.tenantId, t.kind),
+  ]
+).enableRLS();
+
+// notifications: durable record of a delivered (or attempted) message
+// through an integration channel. Used by InAppAdapter as a mailbox, and by
+// the worker to build an audit trail regardless of channel.
+export const notifications = pgTable(
+  'notifications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    recipientUserId: text('recipient_user_id').references(() => user.id, {
+      onDelete: 'set null',
+    }),
+    channel: text('channel').notNull(),
+    title: text('title').notNull(),
+    body: text('body'),
+    // Loose ref to the source entity (task, reminder, project...). Not FK'd
+    // because the source may be deleted; the notification stays as history.
+    sourceKind: text('source_kind'),
+    sourceId: text('source_id'),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    ...auditColumns,
+  },
+  (t) => [
+    index('notifications_tenant_idx').on(t.tenantId),
+    index('notifications_recipient_idx').on(t.recipientUserId),
+  ]
+).enableRLS();
+
 // reminders: scheduled notifications attached to a task. The worker picks up
 // pending ones from the BullMQ queue at fire_at and marks them fired.
 // channel hints which integration adapter should deliver the message —
