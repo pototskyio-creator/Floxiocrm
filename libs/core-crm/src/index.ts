@@ -4,4 +4,6 @@ export * from './lib/tenant/index.js';
 export * from './lib/clients/index.js';
 export * from './lib/pipelines/index.js';
 export * from './lib/projects/index.js';
+export * from './lib/tasks/index.js';
+export * from './lib/reminders/index.js';
 export { ZodValidationPipe } from './lib/util/zod-validation.pipe.js';

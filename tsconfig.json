@@ -29,6 +29,9 @@
     },
     {
       "path": "./libs/core-auth"
+    },
+    {
+      "path": "./libs/core-jobs"
     }
   ]
 }

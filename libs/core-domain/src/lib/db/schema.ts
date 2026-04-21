@@ -239,3 +239,69 @@ export const projects = pgTable(
     index('projects_stage_idx').on(t.stageId),
   ]
 ).enableRLS();
+
+// tasks: actionable items, optionally scoped to a client or project.
+// Declared after projects so the project_id FK resolves cleanly.
+export const tasks = pgTable(
+  'tasks',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    clientId: uuid('client_id').references(() => clients.id, { onDelete: 'set null' }),
+    projectId: uuid('project_id').references(() => projects.id, { onDelete: 'set null' }),
+    assigneeUserId: text('assignee_user_id').references(() => user.id, { onDelete: 'set null' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    status: text('status', { enum: ['open', 'done', 'canceled'] })
+      .notNull()
+      .default('open'),
+    dueAt: timestamp('due_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    ...auditColumns,
+  },
+  (t) => [
+    index('tasks_tenant_idx').on(t.tenantId),
+    index('tasks_client_idx').on(t.clientId),
+    index('tasks_project_idx').on(t.projectId),
+    index('tasks_tenant_status_idx').on(t.tenantId, t.status),
+    index('tasks_due_at_idx').on(t.dueAt),
+  ]
+).enableRLS();
+
+// reminders: scheduled notifications attached to a task. The worker picks up
+// pending ones from the BullMQ queue at fire_at and marks them fired.
+// channel hints which integration adapter should deliver the message —
+// actual delivery wiring (Telegram) lands in Д7.
+export const reminders = pgTable(
+  'reminders',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    fireAt: timestamp('fire_at', { withTimezone: true }).notNull(),
+    channel: text('channel', { enum: ['telegram', 'email', 'in_app'] })
+      .notNull()
+      .default('in_app'),
+    status: text('status', { enum: ['pending', 'fired', 'failed', 'canceled'] })
+      .notNull()
+      .default('pending'),
+    // BullMQ job id — lets us cancel/inspect the delayed job later.
+    jobId: text('job_id'),
+    attempts: integer('attempts').notNull().default(0),
+    lastError: text('last_error'),
+    lastAttemptAt: timestamp('last_attempt_at', { withTimezone: true }),
+    firedAt: timestamp('fired_at', { withTimezone: true }),
+    ...auditColumns,
+  },
+  (t) => [
+    index('reminders_tenant_idx').on(t.tenantId),
+    index('reminders_task_idx').on(t.taskId),
+    index('reminders_status_fire_at_idx').on(t.status, t.fireAt),
+  ]
+).enableRLS();

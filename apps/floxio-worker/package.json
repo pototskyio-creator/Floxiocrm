@@ -89,7 +89,15 @@
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
-    "@nestjs/platform-express": "^11.0.0",
+    "@org/core-crm": "workspace:*",
+    "@org/core-domain": "workspace:*",
+    "@org/core-jobs": "workspace:*",
+    "@org/shared-types": "workspace:*",
+    "bullmq": "^5.0.0",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "ioredis": "^5.0.0",
+    "postgres": "^3.4.9",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
     "tslib": "^2.3.0"

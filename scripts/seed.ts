@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import { sql } from 'drizzle-orm';
+import { Queue } from 'bullmq';
+import { Redis } from 'ioredis';
 import { getDb, closeDb, schema } from '@org/core-domain';
 import { createAuth } from '@org/core-auth';
+import { QUEUE_NAMES } from '@org/core-jobs';
 
 interface Fixture {
   email: string;
@@ -13,7 +16,6 @@ interface Fixture {
   projects: Array<{ clientName: string; title: string; stage: string; amountCents?: number }>;
 }
 
-// Default pipeline shape: every new tenant gets this.
 const DEFAULT_PIPELINE_NAME = 'Sales';
 const DEFAULT_STAGES: Array<{ name: string; kind: 'open' | 'won' | 'lost' }> = [
   { name: 'Lead', kind: 'open' },
@@ -56,6 +58,19 @@ function extractSessionCookie(setCookie: string[] | string | null | undefined): 
     .join('; ');
 }
 
+async function wipeRemindersQueue() {
+  const url = process.env.REDIS_URL ?? 'redis://localhost:6379';
+  const connection = new Redis(url, { maxRetriesPerRequest: null });
+  const q = new Queue(QUEUE_NAMES.reminders, { connection });
+  try {
+    await q.obliterate({ force: true });
+  } catch {
+    // fresh install has nothing to obliterate
+  }
+  await q.close();
+  await connection.quit();
+}
+
 async function main() {
   const auth = createAuth();
   const db = getDb();
@@ -63,9 +78,11 @@ async function main() {
   await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT set_config('app.admin', 'on', true)`);
     await tx.execute(
-      sql`TRUNCATE TABLE projects, stages, pipelines, clients, invitation, member, organization, session, account, "user", verification RESTART IDENTITY CASCADE`
+      sql`TRUNCATE TABLE reminders, tasks, projects, stages, pipelines, clients, invitation, member, organization, session, account, "user", verification RESTART IDENTITY CASCADE`
     );
   });
+
+  await wipeRemindersQueue();
 
   const createdTenants: Array<{
     fixture: Fixture;
@@ -91,7 +108,6 @@ async function main() {
     });
     if (!org) throw new Error(`Failed to create org ${f.orgSlug}`);
 
-    // Pipeline + stages + clients + projects — single admin transaction.
     const result = await db.transaction(async (tx) => {
       await tx.execute(sql`SELECT set_config('app.admin', 'on', true)`);
 

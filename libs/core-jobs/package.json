@@ -1,5 +1,5 @@
 {
-  "name": "@org/core-crm",
+  "name": "@org/core-jobs",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -16,19 +16,12 @@
     }
   },
   "nx": {
-    "tags": [
-      "scope:crm",
-      "type:feature"
-    ]
+    "tags": ["scope:shared", "type:infra"]
   },
   "dependencies": {
     "tslib": "^2.3.0",
-    "@org/core-domain": "workspace:*",
-    "@org/core-jobs": "workspace:*",
-    "@org/shared-types": "workspace:*",
     "@nestjs/common": "^11.0.0",
-    "drizzle-orm": "^0.45.2",
-    "postgres": "^3.4.9",
-    "zod": "^4.3.6"
+    "bullmq": "^5.0.0",
+    "ioredis": "^5.0.0"
   }
 }

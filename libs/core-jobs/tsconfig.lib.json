@@ -17,15 +17,5 @@
     "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*.ts"],
-  "references": [
-    {
-      "path": "../shared-types/tsconfig.lib.json"
-    },
-    {
-      "path": "../core-jobs/tsconfig.lib.json"
-    },
-    {
-      "path": "../core-domain/tsconfig.lib.json"
-    }
-  ]
+  "references": []
 }

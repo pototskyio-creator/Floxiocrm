@@ -205,3 +205,79 @@ describe('/api/projects — lifecycle', () => {
     expect(cross.status).toBe(404);
   });
 });
+
+describe('/api/tasks — CRUD + auto-reminder → worker fires it', () => {
+  it('creates a task, enqueues a reminder, and the worker fires it', async () => {
+    const cookie = await signIn(USER_A);
+
+    const fireInMs = 1500;
+    const dueAt = new Date(Date.now() + fireInMs).toISOString();
+
+    const created = await axios.post(
+      '/api/tasks',
+      {
+        title: 'E2E — follow up with Acme',
+        dueAt,
+        reminder: { channel: 'in_app', offsetSeconds: 0 },
+      },
+      { headers: { cookie } }
+    );
+    expect(created.status).toBe(201);
+    const taskId = created.data.id as string;
+
+    // Reminder row exists and is pending.
+    const pending = await axios.get(`/api/tasks/${taskId}/reminders`, { headers: { cookie } });
+    expect(pending.status).toBe(200);
+    expect(pending.data).toHaveLength(1);
+    expect(pending.data[0].status).toBe('pending');
+    expect(pending.data[0].channel).toBe('in_app');
+    expect(pending.data[0].jobId).toBeTruthy();
+
+    // Wait long enough for the worker to pick up the delayed job.
+    await new Promise((r) => setTimeout(r, fireInMs + 2500));
+
+    const fired = await axios.get(`/api/tasks/${taskId}/reminders`, { headers: { cookie } });
+    expect(fired.status).toBe(200);
+    expect(fired.data[0].status).toBe('fired');
+    expect(fired.data[0].firedAt).toBeTruthy();
+    expect(fired.data[0].attempts).toBeGreaterThanOrEqual(1);
+  }, 15_000);
+
+  it('isolates tasks between tenants', async () => {
+    const cookieA = await signIn(USER_A);
+    const cookieB = await signIn(USER_B);
+
+    const create = await axios.post(
+      '/api/tasks',
+      { title: 'Private to tenant A' },
+      { headers: { cookie: cookieA } }
+    );
+    const taskId = create.data.id as string;
+
+    const getA = await axios.get(`/api/tasks/${taskId}`, { headers: { cookie: cookieA } });
+    expect(getA.status).toBe(200);
+
+    const getB = await axios.get(`/api/tasks/${taskId}`, { headers: { cookie: cookieB } });
+    expect(getB.status).toBe(404);
+  });
+
+  it('marks task done via PUT (sets completedAt)', async () => {
+    const cookie = await signIn(USER_A);
+    const create = await axios.post(
+      '/api/tasks',
+      { title: 'Close me out' },
+      { headers: { cookie } }
+    );
+    const taskId = create.data.id as string;
+    expect(create.data.completedAt).toBeNull();
+
+    const done = await axios.put(
+      `/api/tasks/${taskId}`,
+      { status: 'done' },
+      { headers: { cookie } }
+    );
+    expect(done.status).toBe(200);
+    expect(done.data.status).toBe('done');
+    expect(done.data.completedAt).toBeTruthy();
+  });
+});
