@@ -24,6 +24,7 @@
     "@org/core-crm": "workspace:*",
     "@nestjs/common": "^11.0.0",
     "drizzle-orm": "^0.45.2",
+    "grammy": "^1.42.0",
     "zod": "^4.3.6"
   }
 }

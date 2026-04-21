@@ -297,8 +297,20 @@ describe('/api/integrations — registry + install', () => {
     const cookie = await signIn(USER_A);
     const res = await axios.get('/api/integrations/kinds', { headers: { cookie } });
     expect(res.status).toBe(200);
-    const kinds = (res.data as Array<{ kind: string }>).map((k) => k.kind);
-    expect(kinds).toContain('in_app');
+    const kinds = res.data as Array<{ kind: string; supportsDeliver: boolean }>;
+    const names = kinds.map((k) => k.kind);
+    expect(names).toEqual(expect.arrayContaining(['in_app', 'telegram']));
+    expect(kinds.find((k) => k.kind === 'telegram')!.supportsDeliver).toBe(true);
+  });
+
+  it('rejects telegram install with malformed config (400)', async () => {
+    const cookie = await signIn(USER_A);
+    const res = await axios.post(
+      '/api/integrations',
+      { kind: 'telegram', name: 'main', config: { botToken: 'too-short', chatId: '' } },
+      { headers: { cookie } }
+    );
+    expect(res.status).toBe(400);
   });
 
   it('rejects an unknown adapter kind with 404', async () => {

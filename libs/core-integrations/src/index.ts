@@ -19,3 +19,5 @@ export { NotificationsAdminRepository } from './lib/core/notifications.repositor
 // Adapters.
 export { InAppAdapterModule } from './lib/adapters/in-app/in-app.module.js';
 export { InAppAdapter } from './lib/adapters/in-app/in-app.adapter.js';
+export { TelegramAdapterModule } from './lib/adapters/telegram/telegram.module.js';
+export { TelegramAdapter } from './lib/adapters/telegram/telegram.adapter.js';
