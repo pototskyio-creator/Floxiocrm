@@ -7,6 +7,7 @@ import { PipelinesModule } from './pipelines/pipelines.module.js';
 import { ProjectsModule } from './projects/projects.module.js';
 import { TasksModule } from './tasks/tasks.module.js';
 import { RemindersModule } from './reminders/reminders.module.js';
+import { StatsModule } from './stats/stats.module.js';
 
 // CoreCrmModule bundles the infrastructure (DB, tenant context, jobs) and the
 // domain feature modules. Per-client apps import this once in their root module.
@@ -20,6 +21,7 @@ import { RemindersModule } from './reminders/reminders.module.js';
     ProjectsModule,
     RemindersModule,
     TasksModule,
+    StatsModule,
   ],
   exports: [
     CoreJobsModule,
@@ -30,6 +32,7 @@ import { RemindersModule } from './reminders/reminders.module.js';
     ProjectsModule,
     RemindersModule,
     TasksModule,
+    StatsModule,
   ],
 })
 export class CoreCrmModule {}

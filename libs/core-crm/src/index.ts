@@ -6,4 +6,5 @@ export * from './lib/pipelines/index.js';
 export * from './lib/projects/index.js';
 export * from './lib/tasks/index.js';
 export * from './lib/reminders/index.js';
+export * from './lib/stats/index.js';
 export { ZodValidationPipe } from './lib/util/zod-validation.pipe.js';
