@@ -5,7 +5,11 @@ import {
   IntegrationInstancesAdminRepository,
   IntegrationInstancesRepository,
 } from './core/integration-instances.repository.js';
-import { NotificationsAdminRepository } from './core/notifications.repository.js';
+import {
+  NotificationsAdminRepository,
+  NotificationsRepository,
+} from './core/notifications.repository.js';
+import { NotificationsController } from './core/notifications.controller.js';
 import { IntegrationsService } from './core/integrations.service.js';
 import { IntegrationsController } from './core/integrations.controller.js';
 import { DeliveryService } from './core/delivery.service.js';
@@ -20,13 +24,14 @@ import { WebhookAdapterModule } from './adapters/webhook/webhook.module.js';
 @Global()
 @Module({
   imports: [InAppAdapterModule, TelegramAdapterModule, WebhookAdapterModule],
-  controllers: [IntegrationsController],
+  controllers: [IntegrationsController, NotificationsController],
   providers: [
     CryptoService,
     IntegrationRegistry,
     IntegrationInstancesRepository,
     IntegrationInstancesAdminRepository,
     NotificationsAdminRepository,
+    NotificationsRepository,
     IntegrationsService,
     DeliveryService,
   ],
@@ -36,6 +41,7 @@ import { WebhookAdapterModule } from './adapters/webhook/webhook.module.js';
     IntegrationInstancesRepository,
     IntegrationInstancesAdminRepository,
     NotificationsAdminRepository,
+    NotificationsRepository,
     IntegrationsService,
     DeliveryService,
     InAppAdapterModule,

@@ -1,13 +1,20 @@
-import { Badge, Card, CardContent, CardHeader, CardTitle } from '@org/ui-kit';
+import Link from 'next/link';
+import { Button, Card, CardContent, CardHeader, CardTitle } from '@org/ui-kit';
 import { fetchFromApi } from '../../../lib/api';
 import type { Task } from '@org/shared-types';
+import { TaskRow } from './task-row';
 
 export default async function TasksPage() {
   const tasks = await fetchFromApi<Task[]>('/api/tasks');
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Tasks</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Tasks</h1>
+        <Link href="/tasks/new">
+          <Button>New task</Button>
+        </Link>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>{tasks.length} total</CardTitle>
@@ -22,24 +29,13 @@ export default async function TasksPage() {
                   <th className="pb-2 font-medium">Title</th>
                   <th className="pb-2 font-medium">Status</th>
                   <th className="pb-2 font-medium">Due</th>
+                  <th className="pb-2 font-medium text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((t) => {
-                  const due = t.dueAt ? new Date(t.dueAt) : null;
-                  const overdue = due && t.status === 'open' && due < new Date();
-                  return (
-                    <tr key={t.id} className="border-t border-neutral-100">
-                      <td className="py-2">{t.title}</td>
-                      <td className="py-2">
-                        <Badge tone={t.status}>{t.status}</Badge>
-                      </td>
-                      <td className={overdue ? 'py-2 text-amber-600' : 'py-2 text-neutral-600'}>
-                        {due ? due.toLocaleDateString() : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {tasks.map((t) => (
+                  <TaskRow key={t.id} task={t} />
+                ))}
               </tbody>
             </table>
           )}

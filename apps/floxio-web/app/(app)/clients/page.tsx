@@ -1,4 +1,5 @@
-import { Badge, Card, CardContent, CardHeader, CardTitle } from '@org/ui-kit';
+import Link from 'next/link';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@org/ui-kit';
 import { fetchFromApi } from '../../../lib/api';
 import type { Client } from '@org/shared-types';
 
@@ -7,7 +8,12 @@ export default async function ClientsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Clients</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Clients</h1>
+        <Link href="/clients/new">
+          <Button>New client</Button>
+        </Link>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>{clients.length} total</CardTitle>
@@ -27,9 +33,18 @@ export default async function ClientsPage() {
               <tbody>
                 {clients.map((c) => (
                   <tr key={c.id} className="border-t border-neutral-100">
-                    <td className="py-2">{c.name}</td>
                     <td className="py-2">
-                      <Badge tone={c.status === 'active' ? 'open' : 'canceled'}>{c.status}</Badge>
+                      <Link
+                        href={`/clients/${c.id}`}
+                        className="text-neutral-900 hover:underline"
+                      >
+                        {c.name}
+                      </Link>
+                    </td>
+                    <td className="py-2">
+                      <Badge tone={c.status === 'active' ? 'open' : 'canceled'}>
+                        {c.status}
+                      </Badge>
                     </td>
                     <td className="py-2 text-neutral-500">
                       {new Date(c.createdAt).toLocaleDateString()}

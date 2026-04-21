@@ -10,6 +10,8 @@ const NAV = [
   { href: '/clients', label: 'Clients' },
   { href: '/projects', label: 'Projects' },
   { href: '/tasks', label: 'Tasks' },
+  { href: '/inbox', label: 'Inbox' },
+  { href: '/integrations', label: 'Integrations' },
 ];
 
 export function Sidebar({ userName, orgId }: { userName: string; orgId: string | null }) {

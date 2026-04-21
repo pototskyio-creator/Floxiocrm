@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { desc, eq, isNull, and, sql } from 'drizzle-orm';
 import { schema } from '@org/core-domain';
-import { DbService } from '@org/core-crm';
+import { DbService, TenantContext } from '@org/core-crm';
 
 const { notifications } = schema;
 
-// Notifications live across tenants and are written by the worker (no user
-// session), so this repo uses the admin transaction helper exclusively.
+// Admin writer used by the worker (no user session).
 @Injectable()
 export class NotificationsAdminRepository {
   constructor(private readonly db: DbService) {}
@@ -33,6 +33,40 @@ export class NotificationsAdminRepository {
         })
         .returning();
       return rows[0];
+    });
+  }
+}
+
+// Tenant-scoped reader used by the /api/notifications inbox endpoint.
+@Injectable()
+export class NotificationsRepository {
+  constructor(
+    private readonly db: DbService,
+    private readonly tenant: TenantContext
+  ) {}
+
+  async list(opts: { limit: number; offset: number }) {
+    const tenantId = this.tenant.getTenantId();
+    return this.db.withTenantTx(tenantId, (tx) =>
+      tx
+        .select()
+        .from(notifications)
+        .where(isNull(notifications.deletedAt))
+        .orderBy(desc(notifications.createdAt))
+        .limit(opts.limit)
+        .offset(opts.offset)
+    );
+  }
+
+  async markRead(id: string) {
+    const tenantId = this.tenant.getTenantId();
+    return this.db.withTenantTx(tenantId, async (tx) => {
+      const rows = await tx
+        .update(notifications)
+        .set({ readAt: sql`now()`, updatedAt: sql`now()` })
+        .where(and(eq(notifications.id, id), isNull(notifications.readAt)))
+        .returning();
+      return rows[0] ?? null;
     });
   }
 }

@@ -14,7 +14,10 @@ export {
   IntegrationInstancesRepository,
   IntegrationInstancesAdminRepository,
 } from './lib/core/integration-instances.repository.js';
-export { NotificationsAdminRepository } from './lib/core/notifications.repository.js';
+export {
+  NotificationsAdminRepository,
+  NotificationsRepository,
+} from './lib/core/notifications.repository.js';
 
 // Adapters.
 export { InAppAdapterModule } from './lib/adapters/in-app/in-app.module.js';
