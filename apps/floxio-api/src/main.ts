@@ -8,6 +8,17 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
+
+  // CORS for the Next.js client. Credentials:true is required because auth
+  // sessions ride in cookies; wildcard origin is not allowed with credentials.
+  app.enableCors({
+    origin: (process.env.TRUSTED_ORIGINS ?? 'http://localhost:3000')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    credentials: true,
+  });
+
   const port = process.env.API_PORT || process.env.PORT || 3001;
   await app.listen(port);
   Logger.log(

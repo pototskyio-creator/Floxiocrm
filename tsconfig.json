@@ -32,6 +32,9 @@
     },
     {
       "path": "./libs/core-jobs"
+    },
+    {
+      "path": "./libs/ui-kit"
     }
   ]
 }
