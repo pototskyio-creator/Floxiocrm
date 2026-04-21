@@ -20,10 +20,15 @@ export class SessionMiddleware implements NestMiddleware {
   ) {}
 
   async use(req: Request, _res: Response, next: NextFunction): Promise<void> {
-    // Belt-and-suspenders: never auth-gate the auth routes themselves. The
-    // AppModule also excludes them, but this guards against a misconfigured
-    // exclude() (Nest's path syntax varies between Express versions).
-    if (req.originalUrl.startsWith('/api/auth/') || req.originalUrl === '/api/auth') {
+    // Belt-and-suspenders: never auth-gate the Better Auth routes or the
+    // inbound webhook route. AppModule also excludes them, but this guards
+    // against a misconfigured exclude() (Nest's splat syntax varies between
+    // Express versions and globalPrefix behavior).
+    if (
+      req.originalUrl === '/api/auth' ||
+      req.originalUrl.startsWith('/api/auth/') ||
+      req.originalUrl.startsWith('/api/webhooks/')
+    ) {
       return next();
     }
 

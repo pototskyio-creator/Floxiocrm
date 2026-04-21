@@ -104,3 +104,27 @@ export class TasksRepository {
     });
   }
 }
+
+// Admin variant for worker-mode writes (inbound webhooks, queued jobs).
+@Injectable()
+export class TasksAdminRepository {
+  constructor(private readonly dbService: DbService) {}
+
+  async createAdmin(input: {
+    tenantId: string;
+    title: string;
+    description?: string | null;
+  }) {
+    return this.dbService.withAdminTx(async (tx) => {
+      const rows = await tx
+        .insert(tasks)
+        .values({
+          tenantId: input.tenantId,
+          title: input.title,
+          description: input.description ?? null,
+        })
+        .returning();
+      return rows[0];
+    });
+  }
+}

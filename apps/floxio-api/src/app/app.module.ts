@@ -20,13 +20,15 @@ export class AppModule implements NestModule {
     // Session-derived tenant scope on every /api/* route except:
     //   - root health (AppController at /api)
     //   - Better Auth endpoints (they manage their own session cookies)
+    //   - inbound webhook endpoint (per-instance HMAC auth, no session)
     consumer
       .apply(SessionMiddleware)
       .exclude(
         { path: '', method: RequestMethod.ALL },
         { path: 'api', method: RequestMethod.ALL },
         { path: 'api/health', method: RequestMethod.ALL },
-        { path: 'api/auth/{*splat}', method: RequestMethod.ALL }
+        { path: 'api/auth/{*splat}', method: RequestMethod.ALL },
+        { path: 'api/webhooks/{*splat}', method: RequestMethod.ALL }
       )
       .forRoutes('*');
   }

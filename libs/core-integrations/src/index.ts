@@ -21,3 +21,5 @@ export { InAppAdapterModule } from './lib/adapters/in-app/in-app.module.js';
 export { InAppAdapter } from './lib/adapters/in-app/in-app.adapter.js';
 export { TelegramAdapterModule } from './lib/adapters/telegram/telegram.module.js';
 export { TelegramAdapter } from './lib/adapters/telegram/telegram.adapter.js';
+export { WebhookAdapterModule } from './lib/adapters/webhook/webhook.module.js';
+export { WebhookAdapter } from './lib/adapters/webhook/webhook.adapter.js';

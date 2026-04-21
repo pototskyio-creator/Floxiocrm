@@ -5,7 +5,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody:true keeps the original bytes on `req.rawBody` for HMAC checks
+  // (inbound webhook signature verification). The parsed body is still
+  // available as `req.body` for everything else.
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);
 

@@ -1,4 +1,5 @@
 import axios, { type AxiosResponse } from 'axios';
+import { createHmac } from 'node:crypto';
 
 const USER_A = { email: 'owner-a@test.dev', password: 'correct-horse-battery-a' };
 const USER_B = { email: 'owner-b@test.dev', password: 'correct-horse-battery-b' };
@@ -321,5 +322,96 @@ describe('/api/integrations — registry + install', () => {
       { headers: { cookie } }
     );
     expect(res.status).toBe(404);
+  });
+});
+
+describe('/api/webhooks/:instanceId — inbound, HMAC-authed', () => {
+  const secret = 'dev-webhook-secret-32chars-xxxxx';
+
+  async function installWebhook(cookie: string, createEntity: 'client' | 'task') {
+    const res = await axios.post(
+      '/api/integrations',
+      {
+        kind: 'webhook',
+        name: `E2E ${createEntity}`,
+        config: { secret, createEntity },
+      },
+      { headers: { cookie } }
+    );
+    expect(res.status).toBe(201);
+    return res.data.id as string;
+  }
+
+  function sign(body: unknown): { raw: string; sig: string } {
+    const raw = JSON.stringify(body);
+    const sig = createHmac('sha256', secret).update(raw).digest('hex');
+    return { raw, sig };
+  }
+
+  it('creates a client when called with a valid HMAC', async () => {
+    const cookieA = await signIn(USER_A);
+    const instanceId = await installWebhook(cookieA, 'client');
+
+    const payload = { name: 'Hooked Corp', notes: 'from webhook' };
+    const { raw, sig } = sign(payload);
+
+    const hit = await axios.post(`/api/webhooks/${instanceId}`, raw, {
+      headers: {
+        'content-type': 'application/json',
+        'x-floxio-signature': sig,
+      },
+      transformRequest: (d: unknown) => d, // don't re-serialize — HMAC is over `raw`
+    });
+    expect(hit.status).toBe(202);
+    expect(hit.data.entity).toBe('client');
+
+    const list = await axios.get('/api/clients', { headers: { cookie: cookieA } });
+    const names = (list.data as Array<{ name: string }>).map((c) => c.name);
+    expect(names).toContain('Hooked Corp');
+  });
+
+  it('rejects a call with no / bad signature (401)', async () => {
+    const cookieA = await signIn(USER_A);
+    const instanceId = await installWebhook(cookieA, 'client');
+
+    const payload = { name: 'nope' };
+    const raw = JSON.stringify(payload);
+
+    const noSig = await axios.post(`/api/webhooks/${instanceId}`, raw, {
+      headers: { 'content-type': 'application/json' },
+      transformRequest: (d: unknown) => d,
+    });
+    expect(noSig.status).toBe(401);
+
+    const badSig = await axios.post(`/api/webhooks/${instanceId}`, raw, {
+      headers: {
+        'content-type': 'application/json',
+        'x-floxio-signature': 'not-a-real-signature',
+      },
+      transformRequest: (d: unknown) => d,
+    });
+    expect(badSig.status).toBe(401);
+  });
+
+  it('creates a task when the instance is configured for createEntity=task', async () => {
+    const cookieA = await signIn(USER_A);
+    const instanceId = await installWebhook(cookieA, 'task');
+
+    const payload = { title: 'Webhook-spawned follow-up', notes: 'call back tomorrow' };
+    const { raw, sig } = sign(payload);
+
+    const hit = await axios.post(`/api/webhooks/${instanceId}`, raw, {
+      headers: {
+        'content-type': 'application/json',
+        'x-floxio-signature': sig,
+      },
+      transformRequest: (d: unknown) => d,
+    });
+    expect(hit.status).toBe(202);
+    expect(hit.data.entity).toBe('task');
+
+    const list = await axios.get('/api/tasks', { headers: { cookie: cookieA } });
+    const titles = (list.data as Array<{ title: string }>).map((t) => t.title);
+    expect(titles).toContain('Webhook-spawned follow-up');
   });
 });

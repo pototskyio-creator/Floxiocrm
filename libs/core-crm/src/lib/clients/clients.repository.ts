@@ -88,3 +88,24 @@ export class ClientsRepository {
     });
   }
 }
+
+// Admin variant for worker-mode writes (inbound webhooks, queued jobs) that
+// have a tenantId but no user session.
+@Injectable()
+export class ClientsAdminRepository {
+  constructor(private readonly dbService: DbService) {}
+
+  async createAdmin(input: { tenantId: string; name: string; notes?: string | null }) {
+    return this.dbService.withAdminTx(async (tx) => {
+      const rows = await tx
+        .insert(clients)
+        .values({
+          tenantId: input.tenantId,
+          name: input.name,
+          notes: input.notes ?? null,
+        })
+        .returning();
+      return rows[0];
+    });
+  }
+}

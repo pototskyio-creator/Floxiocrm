@@ -11,13 +11,15 @@ import { IntegrationsController } from './core/integrations.controller.js';
 import { DeliveryService } from './core/delivery.service.js';
 import { InAppAdapterModule } from './adapters/in-app/in-app.module.js';
 import { TelegramAdapterModule } from './adapters/telegram/telegram.module.js';
+import { WebhookAdapterModule } from './adapters/webhook/webhook.module.js';
 
-// Global so adapter modules (InAppAdapterModule, TelegramAdapterModule, and
-// future IMAP/...) can inject IntegrationRegistry + NotificationsAdminRepository
-// + CryptoService without re-importing this module explicitly.
+// Global so adapter modules (InAppAdapterModule, TelegramAdapterModule,
+// WebhookAdapterModule, and future IMAP/...) can inject IntegrationRegistry +
+// NotificationsAdminRepository + CryptoService without re-importing this
+// module explicitly.
 @Global()
 @Module({
-  imports: [InAppAdapterModule, TelegramAdapterModule],
+  imports: [InAppAdapterModule, TelegramAdapterModule, WebhookAdapterModule],
   controllers: [IntegrationsController],
   providers: [
     CryptoService,
@@ -38,6 +40,7 @@ import { TelegramAdapterModule } from './adapters/telegram/telegram.module.js';
     DeliveryService,
     InAppAdapterModule,
     TelegramAdapterModule,
+    WebhookAdapterModule,
   ],
 })
 export class CoreIntegrationsModule {}

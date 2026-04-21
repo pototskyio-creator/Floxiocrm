@@ -100,7 +100,8 @@ export class IntegrationInstancesRepository {
 
 // Admin variant for worker-mode code (no user session). Reads across tenants
 // via app.admin='on' — the worker needs this to find an instance for a
-// tenant+kind when processing a queued job.
+// tenant+kind when processing a queued job, and the public webhook endpoint
+// uses findByIdAdmin since it only has the instance id from the URL.
 @Injectable()
 export class IntegrationInstancesAdminRepository {
   constructor(private readonly db: DbService) {}
@@ -118,6 +119,17 @@ export class IntegrationInstancesAdminRepository {
             isNull(integrationInstances.deletedAt)
           )
         )
+        .limit(1);
+      return rows[0] ?? null;
+    });
+  }
+
+  async findByIdAdmin(id: string) {
+    return this.db.withAdminTx(async (tx) => {
+      const rows = await tx
+        .select()
+        .from(integrationInstances)
+        .where(eq(integrationInstances.id, id))
         .limit(1);
       return rows[0] ?? null;
     });
