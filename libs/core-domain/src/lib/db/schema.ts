@@ -6,7 +6,9 @@ import {
   timestamp,
   jsonb,
   boolean,
+  integer,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 // Shared column helpers — every app table gets these.
@@ -158,5 +160,82 @@ export const clients = pgTable(
   (t) => [
     index('clients_tenant_idx').on(t.tenantId),
     index('clients_tenant_status_idx').on(t.tenantId, t.status),
+  ]
+).enableRLS();
+
+// pipelines: a sales funnel definition. Each tenant has >= 1.
+export const pipelines = pgTable(
+  'pipelines',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    isDefault: boolean('is_default').notNull().default(false),
+    ...auditColumns,
+  },
+  (t) => [
+    index('pipelines_tenant_idx').on(t.tenantId),
+  ]
+).enableRLS();
+
+// stages: ordered steps within a pipeline. `position` is the sort key;
+// `(pipeline_id, position)` is unique within a tenant so moves are deterministic.
+export const stages = pgTable(
+  'stages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    pipelineId: uuid('pipeline_id')
+      .notNull()
+      .references(() => pipelines.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    position: integer('position').notNull(),
+    // 'open' stages count as in-progress; 'won'/'lost' are terminal. Kept as
+    // a loose text enum so per-tenant customization is easy later.
+    kind: text('kind', { enum: ['open', 'won', 'lost'] })
+      .notNull()
+      .default('open'),
+    ...auditColumns,
+  },
+  (t) => [
+    index('stages_tenant_idx').on(t.tenantId),
+    index('stages_pipeline_idx').on(t.pipelineId),
+    uniqueIndex('stages_pipeline_position_uq').on(t.pipelineId, t.position),
+  ]
+).enableRLS();
+
+// projects: a deal/engagement attached to a client, moving through stages.
+export const projects = pgTable(
+  'projects',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    clientId: uuid('client_id')
+      .notNull()
+      .references(() => clients.id, { onDelete: 'cascade' }),
+    pipelineId: uuid('pipeline_id')
+      .notNull()
+      .references(() => pipelines.id, { onDelete: 'restrict' }),
+    stageId: uuid('stage_id')
+      .notNull()
+      .references(() => stages.id, { onDelete: 'restrict' }),
+    title: text('title').notNull(),
+    // Amount stored in cents (int4, max ~$21M/deal — plenty for freelancer MVP).
+    // Currency is per-project so multi-currency operators don't pick a single one.
+    amountCents: integer('amount_cents'),
+    currency: text('currency'),
+    notes: text('notes'),
+    ...auditColumns,
+  },
+  (t) => [
+    index('projects_tenant_idx').on(t.tenantId),
+    index('projects_client_idx').on(t.clientId),
+    index('projects_stage_idx').on(t.stageId),
   ]
 ).enableRLS();
