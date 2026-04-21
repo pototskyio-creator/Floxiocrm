@@ -3,6 +3,7 @@
 // consumers stay in lockstep.
 export const QUEUE_NAMES = {
   reminders: 'reminders',
+  imapPolling: 'imap-polling',
 } as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[keyof typeof QUEUE_NAMES];
@@ -14,3 +15,7 @@ export interface ReminderJob {
   reminderId: string;
   tenantId: string;
 }
+
+// Periodic trigger — no per-job payload. The processor enumerates active IMAP
+// instances across tenants and calls pollWithContext() on each.
+export type ImapPollJob = Record<string, never>;

@@ -150,6 +150,9 @@ export const clients = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
+    // Optional — set by the user, used by inbound IMAP to auto-match
+    // incoming messages to an existing client.
+    email: text('email'),
     status: text('status', { enum: ['active', 'archived'] })
       .notNull()
       .default('active'),
@@ -160,6 +163,7 @@ export const clients = pgTable(
   (t) => [
     index('clients_tenant_idx').on(t.tenantId),
     index('clients_tenant_status_idx').on(t.tenantId, t.status),
+    index('clients_tenant_email_idx').on(t.tenantId, t.email),
   ]
 ).enableRLS();
 
@@ -361,5 +365,45 @@ export const reminders = pgTable(
     index('reminders_tenant_idx').on(t.tenantId),
     index('reminders_task_idx').on(t.taskId),
     index('reminders_status_fire_at_idx').on(t.status, t.fireAt),
+  ]
+).enableRLS();
+
+// inbox_messages: individual emails pulled by the IMAP adapter. One row per
+// Message-ID so re-polling is idempotent. matched_client_id is filled when
+// the sender's email matches an existing clients.email; otherwise null and
+// the user can link it by hand (future UX).
+export const inboxMessages = pgTable(
+  'inbox_messages',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: text('tenant_id')
+      .notNull()
+      .references(() => organization.id, { onDelete: 'cascade' }),
+    integrationInstanceId: uuid('integration_instance_id')
+      .notNull()
+      .references(() => integrationInstances.id, { onDelete: 'cascade' }),
+    // RFC Message-ID — not FK but unique per tenant+instance so we dedupe
+    // re-fetches of the same IMAP UID.
+    messageId: text('message_id').notNull(),
+    fromEmail: text('from_email'),
+    fromName: text('from_name'),
+    subject: text('subject'),
+    bodyText: text('body_text'),
+    receivedAt: timestamp('received_at', { withTimezone: true }).notNull(),
+    matchedClientId: uuid('matched_client_id').references(() => clients.id, {
+      onDelete: 'set null',
+    }),
+    readAt: timestamp('read_at', { withTimezone: true }),
+    ...auditColumns,
+  },
+  (t) => [
+    index('inbox_messages_tenant_idx').on(t.tenantId),
+    index('inbox_messages_instance_idx').on(t.integrationInstanceId),
+    index('inbox_messages_client_idx').on(t.matchedClientId),
+    uniqueIndex('inbox_messages_tenant_instance_message_uq').on(
+      t.tenantId,
+      t.integrationInstanceId,
+      t.messageId
+    ),
   ]
 ).enableRLS();

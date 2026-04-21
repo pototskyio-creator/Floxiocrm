@@ -17,6 +17,7 @@ import { apiFetch } from '../../../../lib/api-client';
 export default function NewClientPage() {
   const router = useRouter();
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -28,7 +29,11 @@ export default function NewClientPage() {
     try {
       await apiFetch('/api/clients', {
         method: 'POST',
-        body: JSON.stringify({ name, notes: notes || undefined }),
+        body: JSON.stringify({
+          name,
+          email: email || undefined,
+          notes: notes || undefined,
+        }),
       });
       router.push('/clients');
       router.refresh();
@@ -61,6 +66,16 @@ export default function NewClientPage() {
                 required
                 minLength={1}
                 maxLength={200}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email (optional)</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="matches inbound emails via IMAP"
               />
             </div>
             <div className="flex flex-col gap-1.5">

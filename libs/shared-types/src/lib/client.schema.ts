@@ -7,6 +7,7 @@ export const clientSchema = z.object({
   id: z.uuid(),
   tenantId: z.uuid(),
   name: z.string().min(1).max(200),
+  email: z.email().nullable(),
   status: clientStatusSchema,
   notes: z.string().nullable(),
   tags: z.array(z.string()),
@@ -18,6 +19,7 @@ export type Client = z.infer<typeof clientSchema>;
 
 export const createClientDtoSchema = z.object({
   name: z.string().min(1).max(200),
+  email: z.email().max(320).nullable().optional(),
   status: clientStatusSchema.optional(),
   notes: z.string().max(10_000).nullable().optional(),
   tags: z.array(z.string().min(1).max(64)).max(32).optional(),

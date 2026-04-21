@@ -49,6 +49,7 @@ export class ClientsRepository {
         .values({
           tenantId,
           name: dto.name,
+          email: dto.email ?? null,
           status: dto.status ?? 'active',
           notes: dto.notes ?? null,
           tags: dto.tags ?? [],
@@ -65,6 +66,7 @@ export class ClientsRepository {
         .update(clients)
         .set({
           ...(dto.name !== undefined && { name: dto.name }),
+          ...(dto.email !== undefined && { email: dto.email }),
           ...(dto.status !== undefined && { status: dto.status }),
           ...(dto.notes !== undefined && { notes: dto.notes }),
           ...(dto.tags !== undefined && { tags: dto.tags }),
@@ -95,17 +97,42 @@ export class ClientsRepository {
 export class ClientsAdminRepository {
   constructor(private readonly dbService: DbService) {}
 
-  async createAdmin(input: { tenantId: string; name: string; notes?: string | null }) {
+  async createAdmin(input: {
+    tenantId: string;
+    name: string;
+    notes?: string | null;
+    email?: string | null;
+  }) {
     return this.dbService.withAdminTx(async (tx) => {
       const rows = await tx
         .insert(clients)
         .values({
           tenantId: input.tenantId,
           name: input.name,
+          email: input.email ?? null,
           notes: input.notes ?? null,
         })
         .returning();
       return rows[0];
+    });
+  }
+
+  // Used by IMAP polling to auto-link inbound messages to an existing client
+  // whose email matches the sender. Case-insensitive.
+  async findByEmailAdmin(tenantId: string, email: string) {
+    return this.dbService.withAdminTx(async (tx) => {
+      const rows = await tx
+        .select()
+        .from(clients)
+        .where(
+          and(
+            eq(clients.tenantId, tenantId),
+            eq(sql`lower(${clients.email})`, email.toLowerCase()),
+            isNull(clients.deletedAt)
+          )
+        )
+        .limit(1);
+      return rows[0] ?? null;
     });
   }
 }

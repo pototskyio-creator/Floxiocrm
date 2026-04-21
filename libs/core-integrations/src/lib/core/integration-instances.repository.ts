@@ -134,4 +134,35 @@ export class IntegrationInstancesAdminRepository {
       return rows[0] ?? null;
     });
   }
+
+  // All active instances of a given kind across tenants. Used by the worker's
+  // periodic poller (e.g. IMAP) to fan out per-tenant poll() calls.
+  async findAllActiveByKind(kind: string) {
+    return this.db.withAdminTx(async (tx) => {
+      return tx
+        .select()
+        .from(integrationInstances)
+        .where(
+          and(
+            eq(integrationInstances.kind, kind),
+            eq(integrationInstances.status, 'active'),
+            isNull(integrationInstances.deletedAt)
+          )
+        );
+    });
+  }
+
+  async markCheckedAdmin(id: string, error: string | null) {
+    return this.db.withAdminTx(async (tx) => {
+      await tx
+        .update(integrationInstances)
+        .set({
+          lastError: error,
+          status: error ? 'error' : 'active',
+          lastCheckedAt: sql`now()`,
+          updatedAt: sql`now()`,
+        })
+        .where(eq(integrationInstances.id, id));
+    });
+  }
 }

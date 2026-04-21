@@ -18,6 +18,7 @@ import { apiFetch } from '../../../../lib/api-client';
 export function ClientEditor({ client }: { client: Client }) {
   const router = useRouter();
   const [name, setName] = useState(client.name);
+  const [email, setEmail] = useState(client.email ?? '');
   const [notes, setNotes] = useState(client.notes ?? '');
   const [status, setStatus] = useState<ClientStatus>(client.status);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +31,12 @@ export function ClientEditor({ client }: { client: Client }) {
     try {
       await apiFetch(`/api/clients/${client.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ name, notes: notes || null, status }),
+        body: JSON.stringify({
+          name,
+          email: email || null,
+          notes: notes || null,
+          status,
+        }),
       });
       router.push('/clients');
       router.refresh();
@@ -77,6 +83,16 @@ export function ClientEditor({ client }: { client: Client }) {
                 required
                 minLength={1}
                 maxLength={200}
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="matches inbound emails via IMAP"
               />
             </div>
             <div className="flex flex-col gap-1.5">

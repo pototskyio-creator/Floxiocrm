@@ -57,6 +57,20 @@
       "when": 1776763570346,
       "tag": "0007_rls_integrations",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776796782222,
+      "tag": "0008_puzzling_demogoblin",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776796797519,
+      "tag": "0009_rls_inbox_messages",
+      "breakpoints": true
     }
   ]
 }
